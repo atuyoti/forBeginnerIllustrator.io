@@ -89,7 +89,6 @@
             max-width: 90%;
             max-height: 90%;
             position: relative;
-            overflow: visible;
         }
 
         .image-container img {
@@ -163,6 +162,11 @@
             top: 0;
             left: 0;
             cursor: crosshair;
+            pointer-events: none;
+        }
+
+        .canvas-overlay.active {
+            pointer-events: auto;
         }
 
         .status-text {
@@ -441,10 +445,12 @@
             z-index: 999;
             opacity: 0;
             transition: opacity 0.3s ease;
+            pointer-events: none;
         }
 
         .menu-overlay.active {
             opacity: 1;
+            pointer-events: auto;
         }
 
         /* インフォボタン */
@@ -610,6 +616,11 @@
 
             .menu-overlay {
                 display: block;
+                pointer-events: none;
+            }
+            
+            .menu-overlay.active {
+                pointer-events: auto;
             }
 
             .info-btn {
@@ -788,12 +799,12 @@
             }
 
             .left-panel #zoomSlider {
-                writing-mode: bt-lr;
-                -webkit-appearance: slider-vertical;
                 width: 6px;
                 height: 100px;
                 margin: 10px auto;
                 display: block;
+                -webkit-appearance: slider-vertical;
+                writing-mode: vertical-lr;
             }
 
             .left-panel .zoom-control {
@@ -1249,6 +1260,23 @@
             ctx = canvas.getContext('2d');
             container.appendChild(canvas);
 
+            console.log('===== CANVAS SETUP =====');
+            console.log('Canvas element:', canvas);
+            console.log('Canvas size:', canvas.width, 'x', canvas.height);
+            console.log('Canvas classList:', canvas.classList.toString());
+            console.log('Canvas pointer-events:', window.getComputedStyle(canvas).pointerEvents);
+            
+            // モードが有効な場合、または補助線が存在する場合はactiveクラスを再適用
+            if (isVerticalAuxMode || isHorizontalAuxMode || isBaselineMode || isMeasureMode || isDraggingAuxLine || auxiliaryLines.length > 0) {
+                canvas.classList.add('active');
+                console.log('⚠️ Mode is active or auxiliary lines exist, re-applying active class to canvas');
+                console.log('Auxiliary lines count:', auxiliaryLines.length);
+                console.log('Canvas classList after re-apply:', canvas.classList.toString());
+                console.log('Canvas pointer-events after re-apply:', window.getComputedStyle(canvas).pointerEvents);
+            }
+            
+            console.log('========================');
+
             // Canvasクリックイベント
             canvas.addEventListener('click', handleCanvasClick);
             canvas.addEventListener('mousedown', handleCanvasMouseDown);
@@ -1256,9 +1284,34 @@
             canvas.addEventListener('mouseup', handleCanvasMouseUp);
             
             // タッチイベントを追加
-            canvas.addEventListener('touchstart', handleCanvasTouchStart);
-            canvas.addEventListener('touchmove', handleCanvasTouchMove);
+            canvas.addEventListener('touchstart', handleCanvasTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleCanvasTouchMove, { passive: false });
             canvas.addEventListener('touchend', handleCanvasTouchEnd);
+            canvas.addEventListener('touchcancel', handleCanvasTouchEnd);
+            
+            console.log('Touch event listeners registered with passive:false');
+            
+            // 親要素にもデバッグ用リスナーを追加
+            container.addEventListener('touchstart', (e) => {
+                console.log('🟡 TOUCH on .image-container', e.target.id, e.target.className);
+            }, { passive: false });
+            
+            rightPanel.addEventListener('touchstart', (e) => {
+                console.log('🔵 TOUCH on .right-panel', e.target.id, e.target.className);
+            }, { passive: false });
+            
+            // Z-indexを確認
+            console.log('Canvas z-index:', window.getComputedStyle(canvas).zIndex);
+            console.log('Container z-index:', window.getComputedStyle(container).zIndex);
+            
+            // Canvasの位置を確認
+            const canvasRect = canvas.getBoundingClientRect();
+            console.log('Canvas position:', {
+                top: canvasRect.top,
+                left: canvasRect.left,
+                width: canvasRect.width,
+                height: canvasRect.height
+            });
             
             // 既存の描画を再描画
             redrawAll();
@@ -1349,12 +1402,14 @@
             
             if (isBaselineMode) {
                 baselineBtn.classList.add('active');
+                canvas.classList.add('active');
                 measureBtn.classList.remove('active');
                 verticalAuxBtn.classList.remove('active');
                 horizontalAuxBtn.classList.remove('active');
                 statusText.textContent = '基準線: 1点目をクリック';
             } else {
                 baselineBtn.classList.remove('active');
+                canvas.classList.remove('active');
                 statusText.textContent = '';
             }
         });
@@ -1369,18 +1424,21 @@
             
             if (isMeasureMode) {
                 measureBtn.classList.add('active');
+                canvas.classList.add('active');
                 baselineBtn.classList.remove('active');
                 verticalAuxBtn.classList.remove('active');
                 horizontalAuxBtn.classList.remove('active');
                 statusText.textContent = '測定: 1点目をクリック';
             } else {
                 measureBtn.classList.remove('active');
+                canvas.classList.remove('active');
                 statusText.textContent = '';
             }
         });
 
         // 縦補助ボタンクリック
         verticalAuxBtn.addEventListener('click', () => {
+            console.log('\n===== VERTICAL AUX BUTTON CLICKED =====');
             isVerticalAuxMode = !isVerticalAuxMode;
             isHorizontalAuxMode = false;
             isBaselineMode = false;
@@ -1388,15 +1446,23 @@
             points = [];
             
             if (isVerticalAuxMode) {
+                console.log('Vertical aux mode: ON');
+                console.log('Adding active class to canvas...');
                 verticalAuxBtn.classList.add('active');
+                canvas.classList.add('active');
+                console.log('Canvas classList after:', canvas.classList.toString());
+                console.log('Canvas pointer-events after:', window.getComputedStyle(canvas).pointerEvents);
                 horizontalAuxBtn.classList.remove('active');
                 baselineBtn.classList.remove('active');
                 measureBtn.classList.remove('active');
                 statusText.textContent = '縦補助線: 1点をクリック';
             } else {
+                console.log('Vertical aux mode: OFF');
                 verticalAuxBtn.classList.remove('active');
+                canvas.classList.remove('active');
                 statusText.textContent = '';
             }
+            console.log('===== BUTTON CLICK END =====\n');
         });
 
         // 横補助ボタンクリック
@@ -1409,12 +1475,14 @@
             
             if (isHorizontalAuxMode) {
                 horizontalAuxBtn.classList.add('active');
+                canvas.classList.add('active');
                 verticalAuxBtn.classList.remove('active');
                 baselineBtn.classList.remove('active');
                 measureBtn.classList.remove('active');
                 statusText.textContent = '横補助線: 1点をクリック';
             } else {
                 horizontalAuxBtn.classList.remove('active');
+                canvas.classList.remove('active');
                 statusText.textContent = '';
             }
         });
@@ -1467,15 +1535,118 @@
 
         // タッチスタート処理
         function handleCanvasTouchStart(e) {
-            if (isBaselineMode || isMeasureMode || isVerticalAuxMode || isHorizontalAuxMode) return;
-
+            console.log('\n===== TOUCH START EVENT =====');
+            console.log('🔴 handleCanvasTouchStart CALLED!');
+            console.log('Event type:', e.type);
+            console.log('Touches count:', e.touches.length);
+            console.log('Target:', e.target.id);
+            console.log('Target element:', e.target);
+            console.log('Is Canvas?', e.target.id === 'drawCanvas');
+            
             const rect = canvas.getBoundingClientRect();
             const touch = e.touches[0];
             const x = touch.clientX - rect.left;
             const y = touch.clientY - rect.top;
-            const threshold = 20; // タッチ用に少し大きめに
+            
+            console.log('Touch coordinates:', { clientX: touch.clientX, clientY: touch.clientY, canvasX: x.toFixed(1), canvasY: y.toFixed(1) });
+            console.log('Canvas state:', {
+                hasActiveClass: canvas.classList.contains('active'),
+                pointerEvents: window.getComputedStyle(canvas).pointerEvents,
+                touchAction: window.getComputedStyle(canvas).touchAction
+            });
+            console.log('Mode flags:', {
+                isVerticalAuxMode,
+                isHorizontalAuxMode,
+                isBaselineMode,
+                isMeasureMode
+            });
 
-            // 補助線の近くをタッチしたか確認
+            // 補助線描画モードの場合（タップで描画）
+            if (isVerticalAuxMode) {
+                console.log('✅ VERTICAL AUX MODE TRIGGERED');
+                console.log('Calling e.preventDefault()...');
+                e.preventDefault();
+                console.log('preventDefault() called');
+                const unscaled = unscalePoint({ x, y });
+                auxiliaryLines.push({ type: 'vertical', x: unscaled.x });
+                console.log('Added vertical line at x:', unscaled.x);
+                console.log('Total auxiliary lines:', auxiliaryLines.length);
+                redrawAll();
+                statusText.textContent = '縦補助線を描画しました';
+                isVerticalAuxMode = false;
+                verticalAuxBtn.classList.remove('active');
+                // 補助線が存在するのでactiveクラスは維持
+                console.log('Mode disabled, canvas.active maintained for auxiliary lines');
+                console.log('===== TOUCH START END =====\n');
+                return;
+            }
+
+            if (isHorizontalAuxMode) {
+                e.preventDefault();
+                const unscaled = unscalePoint({ x, y });
+                auxiliaryLines.push({ type: 'horizontal', y: unscaled.y });
+                redrawAll();
+                statusText.textContent = '横補助線を描画しました';
+                isHorizontalAuxMode = false;
+                horizontalAuxBtn.classList.remove('active');
+                // 補助線が存在するのでactiveクラスは維持
+                return;
+            }
+
+            // 基準線・測定モードの場合
+            if (isBaselineMode || isMeasureMode) {
+                e.preventDefault();
+                points.push({ x, y });
+
+                if (points.length === 1) {
+                    const mode = isBaselineMode ? '基準線' : '測定';
+                    statusText.textContent = `${mode}: 2点目をタップ`;
+                    drawPoint(x, y);
+                    redrawAll();
+                } else if (points.length === 2) {
+                    if (isBaselineMode) {
+                        const unscaledP1 = unscalePoint(points[0]);
+                        const unscaledP2 = unscalePoint(points[1]);
+                        const color = colors[baselines.length % colors.length];
+                        const baselineLength = calculateDistance(unscaledP1, unscaledP2);
+                        currentBaseline = {
+                            length: baselineLength,
+                            color: color,
+                            index: baselines.length + 1,
+                            points: [unscaledP1, unscaledP2]
+                        };
+                        baselines.push(currentBaseline);
+                        statusText.textContent = `基準線${currentBaseline.index}を設定しました (長さ = 1.00)`;
+                        measureBtn.disabled = false;
+                        isBaselineMode = false;
+                        baselineBtn.classList.remove('active');
+                        canvas.classList.remove('active');
+                        updateBaselineSelector();
+                    } else if (isMeasureMode) {
+                        const unscaledP1 = unscalePoint(points[0]);
+                        const unscaledP2 = unscalePoint(points[1]);
+                        const measureLength = calculateDistance(unscaledP1, unscaledP2);
+                        const ratio = measureLength / currentBaseline.length;
+                        storedMeasurements.push({
+                            points: [unscaledP1, unscaledP2],
+                            color: currentBaseline.color,
+                            ratio: ratio,
+                            baselineIndex: currentBaseline.index
+                        });
+                        displayMeasurement(ratio, currentBaseline);
+                        statusText.textContent = `測定完了: 比率 = ${ratio.toFixed(2)} (基準線${currentBaseline.index})`;
+                        isMeasureMode = false;
+                        measureBtn.classList.remove('active');
+                        canvas.classList.remove('active');
+                    }
+                    points = [];
+                    redrawAll();
+                }
+                return;
+            }
+
+            // 補助線の選択処理
+            const threshold = 30;
             for (let i = 0; i < auxiliaryLines.length; i++) {
                 const line = auxiliaryLines[i];
                 if (line.type === 'vertical') {
@@ -1484,6 +1655,7 @@
                         e.preventDefault();
                         selectedAuxLineIndex = i;
                         isDraggingAuxLine = true;
+                        canvas.classList.add('active');
                         redrawAll();
                         statusText.textContent = '縦補助線を選択 - 左右にドラッグで移動';
                         return;
@@ -1494,12 +1666,14 @@
                         e.preventDefault();
                         selectedAuxLineIndex = i;
                         isDraggingAuxLine = true;
+                        canvas.classList.add('active');
                         redrawAll();
                         statusText.textContent = '横補助線を選択 - 上下にドラッグで移動';
                         return;
                     }
                 }
             }
+            // 何もマッチしなかった場合は何もせず、スクロールを許可
         }
 
         // マウス移動処理（補助線のドラッグ移動とカーソル変更）
@@ -1586,6 +1760,12 @@
         function handleCanvasTouchEnd(e) {
             if (isDraggingAuxLine) {
                 isDraggingAuxLine = false;
+                // selectedAuxLineIndexはnullにせず維持（再度ドラッグ可能にする）
+                // 補助線が存在する場合はactiveクラスを維持
+                if (auxiliaryLines.length === 0) {
+                    canvas.classList.remove('active');
+                }
+                redrawAll();
                 statusText.textContent = '補助線を移動しました';
             }
         }
@@ -1606,6 +1786,7 @@
                 statusText.textContent = '縦補助線を描画しました';
                 isVerticalAuxMode = false;
                 verticalAuxBtn.classList.remove('active');
+                canvas.classList.remove('active');
                 return;
             }
 
@@ -1616,16 +1797,7 @@
                 statusText.textContent = '横補助線を描画しました';
                 isHorizontalAuxMode = false;
                 horizontalAuxBtn.classList.remove('active');
-                return;
-            }
-
-            // 基準線・測定線モード（2点必要）
-            points.push({ x, y });
-
-            if (points.length === 1) {
-                const mode = isBaselineMode ? '基準線' : '測定';
-                statusText.textContent = `${mode}: 2点目をクリック`;
-                drawPoint(x, y);
+                canvas.classList.remove('active');
             } else if (points.length === 2) {
                 if (isBaselineMode) {
                     // 基準線を描画（スケールなしの座標で保存）
@@ -1663,6 +1835,7 @@
                     statusText.textContent = `測定完了: 比率 = ${ratio.toFixed(2)} (基準線${currentBaseline.index})`;
                     isMeasureMode = false;
                     measureBtn.classList.remove('active');
+                    canvas.classList.remove('active');
                 }
                 points = [];
             }
