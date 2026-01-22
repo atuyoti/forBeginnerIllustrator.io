@@ -290,6 +290,13 @@
             background-color: #229954;
         }
 
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent, #95a5a6, transparent);
+            margin: 20px 0;
+            border: none;
+        }
+
         .zoom-control {
             margin-top: 15px;
             padding: 15px;
@@ -377,6 +384,166 @@
             border: none;
         }
 
+        /* ハンバーガーメニューボタン */
+        .hamburger-btn {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            width: 50px;
+            height: 50px;
+            background-color: #2c3e50;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-btn:hover {
+            background-color: #34495e;
+        }
+
+        .hamburger-btn span {
+            width: 25px;
+            height: 3px;
+            background-color: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(7px, 7px);
+        }
+
+        .hamburger-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* サイドメニューオーバーレイ */
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+        }
+
+        /* インフォボタン */
+        .info-btn {
+            display: none;
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1001;
+            width: 45px;
+            height: 45px;
+            background-color: #3498db;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .info-btn:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+
+        /* インフォモーダル */
+        .info-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1002;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .info-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+
+        .info-modal-content {
+            background-color: #2c3e50;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .info-modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 32px;
+            color: #ecf0f1;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .info-modal-close:hover {
+            color: #3498db;
+        }
+
+        .info-modal h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #3498db;
+        }
+
+        .info-modal h2 {
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #ecf0f1;
+        }
+
+        .info-modal p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #bdc3c7;
+        }
+
         /* レスポンシブデザイン */
         @media (max-width: 1024px) {
             .container {
@@ -434,16 +601,217 @@
             .container {
                 height: auto;
                 min-height: 100vh;
+                flex-direction: row;
+            }
+
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .menu-overlay {
+                display: block;
+            }
+
+            .info-btn {
+                display: flex;
+            }
+
+            .left-panel h1,
+            .left-panel .info-section {
+                display: none;
             }
 
             .left-panel {
-                max-height: none;
-                padding: 10px;
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 80px;
+                max-width: 80px;
+                min-width: 80px;
+                height: 100vh;
+                max-height: 100vh;
+                padding: 80px 10px 10px 10px;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                overflow-y: auto;
+            }
+
+            .left-panel.active {
+                left: 0;
+            }
+
+            /* アイコンのみ表示 */
+            .left-panel h1 {
+                font-size: 12px;
+                writing-mode: vertical-rl;
+                text-orientation: upright;
+                margin-bottom: 20px;
+                letter-spacing: 2px;
+            }
+
+            .left-panel .drop-zone-text,
+            .left-panel .info-section p,
+            .left-panel .info-section h2,
+            .left-panel .tools-section h2,
+            .left-panel .zoom-control h3,
+            .left-panel .display-toggle h3,
+            .left-panel .baseline-selector h3,
+            .left-panel .status-text,
+            .left-panel .zoom-value,
+            .left-panel .baseline-label,
+            .left-panel .measurements {
+                display: none;
+            }
+
+            /* 補助セクションの見出しだけ表示 */
+            .left-panel .tools-section h2:nth-of-type(2) {
+                display: block;
+                font-size: 14px;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+
+            /* ボタン内のテキストを非表示 */
+            .left-panel .btn {
+                font-size: 0;
+            }
+
+            .left-panel #baselineBtn,
+            .left-panel #measureBtn,
+            .left-panel #verticalAuxBtn,
+            .left-panel #horizontalAuxBtn,
+            .left-panel #saveBtn {
+                font-size: 0 !important;
+            }
+
+            .left-panel .drop-zone {
+                padding: 15px 5px;
+                min-height: auto;
+            }
+
+            .left-panel .drop-zone-icon {
+                font-size: 28px;
+                margin-bottom: 0;
+            }
+
+            .left-panel .btn {
+                padding: 12px 5px;
+                font-size: 20px;
+                margin-bottom: 8px;
+                width: 100%;
+                position: relative;
+                line-height: 1.2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* ボタンテキストを簡略化 */
+            .left-panel #baselineBtn::before {
+                content: '';
+                display: none;
+            }
+
+            .left-panel #baselineBtn::after {
+                content: '基';
+                display: block;
+                font-size: 18px;
+            }
+
+            .left-panel #measureBtn::before {
+                content: '';
+                display: none;
+            }
+
+            .left-panel #measureBtn::after {
+                content: '測';
+                display: block;
+                font-size: 18px;
+            }
+
+            .left-panel #verticalAuxBtn::after {
+                content: '縦';
+                display: block;
+                font-size: 18px;
+            }
+
+            .left-panel #horizontalAuxBtn::after {
+                content: '横';
+                display: block;
+                font-size: 18px;
+            }
+
+            .left-panel #saveBtn::before {
+                content: '';
+                display: none;
+            }
+
+            .left-panel #saveBtn::after {
+                content: '💾';
+                display: block;
+                font-size: 28px;
+            }
+
+            .left-panel .aux-lines-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .left-panel .aux-lines-group .btn {
+                width: 100%;
+            }
+
+            .left-panel .baseline-option {
+                justify-content: center;
+                padding: 10px 5px;
+            }
+
+            .left-panel .baseline-indicator {
+                margin-right: 0;
+            }
+
+            .left-panel .toggle-item {
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+
+            .left-panel .toggle-item label {
+                display: none;
+            }
+
+            .left-panel .toggle-item input[type="checkbox"] {
+                margin-right: 0;
+                width: 24px;
+                height: 24px;
+            }
+
+            .left-panel #zoomSlider {
+                writing-mode: bt-lr;
+                -webkit-appearance: slider-vertical;
+                width: 6px;
+                height: 100px;
+                margin: 10px auto;
+                display: block;
+            }
+
+            .left-panel .zoom-control {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .left-panel .display-toggle {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
             }
 
             .right-panel {
-                height: 50vh;
-                min-height: 400px;
+                width: 100%;
+                height: 100vh;
+                min-height: 100vh;
             }
 
             h1 {
@@ -518,11 +886,25 @@
 
         @media (max-width: 480px) {
             .left-panel {
-                padding: 8px;
+                padding: 80px 8px 8px 8px;
+                width: 70px;
+                max-width: 70px;
+                min-width: 70px;
+            }
+
+            .hamburger-btn {
+                width: 45px;
+                height: 45px;
+                top: 12px;
+                left: 12px;
+            }
+
+            .hamburger-btn span {
+                width: 22px;
             }
 
             .right-panel {
-                min-height: 300px;
+                min-height: 100vh;
             }
 
             h1 {
@@ -591,6 +973,41 @@
     </style>
 </head>
 <body>
+    <button class="hamburger-btn" id="hamburgerBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <button class="info-btn" id="infoBtn">ℹ️</button>
+    <div class="menu-overlay" id="menuOverlay"></div>
+    
+    <!-- インフォモーダル -->
+    <div class="info-modal" id="infoModal">
+        <div class="info-modal-content">
+            <button class="info-modal-close" id="infoModalClose">&times;</button>
+            <h1>顔の比率測定ツール</h1>
+            <h2>比率測定の使い方</h2>
+            <p>
+                1. 左の枠に画像をドラッグ＆ドロップ<br>
+                2. 右側に画像が表示されます<br>
+                3. 「基準線」ボタンをクリック<br>
+                4. 画像上で2点をクリックして基準線を描画<br>
+                5. 「測定」ボタンをクリック<br>
+                6. 別の2点をクリックして比率を測定<br>
+                7. 5,6を繰り返して複数の測定が可能です<br>
+                8. 基準線を再度設定する場合は「基準線」ボタンをクリックして新たに2点を選択してください<br>
+                9. 以前の基準線をベースとする測定も可能です。基準線選択セクションから選択してください。
+            </p>
+            <h2>補助線の使い方</h2>
+            <p>
+                補助線は画像上に垂直または水平のガイドラインを引くためのツールです。<br>
+                「縦」または「横」ボタンをクリックし、画像上で1点をクリックすると補助線が描画されます。<br>
+                測定の際に位置合わせの参考としてご利用ください。<br>
+                引いた補助線はクリックして選択し、ドラッグで移動できます。
+            </p>
+        </div>
+    </div>
+    
     <div class="container">
         <div class="left-panel">
             <h1>顔の比率測定ツール</h1>
@@ -610,13 +1027,18 @@
                 <button class="btn btn-primary" id="baselineBtn">📏 基準線</button>
                 <button class="btn btn-secondary" id="measureBtn" disabled>📐 測定</button>
                 
-                <h2 style="margin-top: 20px;">補助線</h2>
+                <hr class="section-divider">
+                
+                <h2>補助</h2>
                 <div class="aux-lines-group">
-                    <button class="btn btn-tertiary" id="verticalAuxBtn">│縦補助</button>
-                    <button class="btn btn-tertiary" id="horizontalAuxBtn">─横補助</button>
+                    <button class="btn btn-tertiary" id="verticalAuxBtn">縦</button>
+                    <button class="btn btn-tertiary" id="horizontalAuxBtn">横</button>
                 </div>
                 
-                <h2 style="margin-top: 20px;">保存</h2>
+                <hr class="section-divider">
+                <hr class="section-divider">
+                
+                <h2>保存</h2>
                 <button class="btn btn-success" id="saveBtn" disabled>💾 画像を保存</button>
                 
                 <div class="status-text" id="statusText"></div>
@@ -699,6 +1121,12 @@
         const showBaselinesCheckbox = document.getElementById('showBaselines');
         const showMeasurementsCheckbox = document.getElementById('showMeasurements');
         const saveBtn = document.getElementById('saveBtn');
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const leftPanel = document.querySelector('.left-panel');
+        const infoBtn = document.getElementById('infoBtn');
+        const infoModal = document.getElementById('infoModal');
+        const infoModalClose = document.getElementById('infoModalClose');
 
         let canvas = null;
         let ctx = null;
@@ -715,6 +1143,8 @@
         let currentBaseline = null; // 現在の基準線
         let storedMeasurements = []; // 測定線の情報を保持
         let auxiliaryLines = []; // 補助線の情報を保持
+        let selectedAuxLineIndex = null; // 選択された補助線のインデックス
+        let isDraggingAuxLine = false; // 補助線をドラッグ中かどうか
         
         // 基準線用の色リスト
         const colors = ['#e74c3c', '#9b59b6', '#3498db', '#1abc9c', '#f39c12', '#e67e22', '#95a5a6'];
@@ -819,9 +1249,23 @@
 
             // Canvasクリックイベント
             canvas.addEventListener('click', handleCanvasClick);
+            canvas.addEventListener('mousedown', handleCanvasMouseDown);
+            canvas.addEventListener('mousemove', handleCanvasMouseMove);
+            canvas.addEventListener('mouseup', handleCanvasMouseUp);
             
             // 既存の描画を再描画
             redrawAll();
+            
+            // 画像の中央をビューポートの中央に配置
+            setTimeout(() => {
+                const rightPanel = document.getElementById('rightPanel');
+                if (container.scrollWidth > rightPanel.clientWidth) {
+                    container.scrollLeft = (container.scrollWidth - rightPanel.clientWidth) / 2;
+                }
+                if (container.scrollHeight > rightPanel.clientHeight) {
+                    container.scrollTop = (container.scrollHeight - rightPanel.clientHeight) / 2;
+                }
+            }, 0);
         }
 
         // すべての線を再描画
@@ -855,11 +1299,12 @@
             
             // 補助線を再描画（チェックボックスがONの場合のみ）
             if (showAuxLinesCheckbox.checked) {
-                auxiliaryLines.forEach(line => {
+                auxiliaryLines.forEach((line, index) => {
+                    const isSelected = (index === selectedAuxLineIndex);
                     if (line.type === 'vertical') {
-                        drawVerticalLine(line.x * imageScale);
+                        drawVerticalLine(line.x * imageScale, isSelected);
                     } else if (line.type === 'horizontal') {
-                        drawHorizontalLine(line.y * imageScale);
+                        drawHorizontalLine(line.y * imageScale, isSelected);
                     }
                 });
             }
@@ -967,6 +1412,110 @@
                 statusText.textContent = '';
             }
         });
+
+        // マウスダウン処理（補助線の選択とドラッグ開始）
+        function handleCanvasMouseDown(e) {
+            if (isBaselineMode || isMeasureMode || isVerticalAuxMode || isHorizontalAuxMode) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const threshold = 10; // クリック判定の閾値（ピクセル）
+
+            // 補助線の近くをクリックしたか確認
+            for (let i = 0; i < auxiliaryLines.length; i++) {
+                const line = auxiliaryLines[i];
+                if (line.type === 'vertical') {
+                    const lineX = line.x * imageScale;
+                    if (Math.abs(x - lineX) < threshold) {
+                        selectedAuxLineIndex = i;
+                        isDraggingAuxLine = true;
+                        canvas.style.cursor = 'ew-resize';
+                        redrawAll();
+                        statusText.textContent = '縦補助線を選択 - 左右にドラッグで移動';
+                        return;
+                    }
+                } else if (line.type === 'horizontal') {
+                    const lineY = line.y * imageScale;
+                    if (Math.abs(y - lineY) < threshold) {
+                        selectedAuxLineIndex = i;
+                        isDraggingAuxLine = true;
+                        canvas.style.cursor = 'ns-resize';
+                        redrawAll();
+                        statusText.textContent = '横補助線を選択 - 上下にドラッグで移動';
+                        return;
+                    }
+                }
+            }
+
+            // 補助線以外の場所をクリックした場合は選択解除
+            if (selectedAuxLineIndex !== null) {
+                selectedAuxLineIndex = null;
+                canvas.style.cursor = 'crosshair';
+                redrawAll();
+                statusText.textContent = '';
+            }
+        }
+
+        // マウス移動処理（補助線のドラッグ移動とカーソル変更）
+        function handleCanvasMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // 補助線をドラッグ中の場合
+            if (isDraggingAuxLine && selectedAuxLineIndex !== null) {
+                const line = auxiliaryLines[selectedAuxLineIndex];
+                if (line.type === 'vertical') {
+                    line.x = x / imageScale;
+                } else if (line.type === 'horizontal') {
+                    line.y = y / imageScale;
+                }
+                redrawAll();
+                return;
+            }
+
+            // モードが有効な場合はカーソルを変更しない
+            if (isBaselineMode || isMeasureMode || isVerticalAuxMode || isHorizontalAuxMode) {
+                canvas.style.cursor = 'crosshair';
+                return;
+            }
+
+            // 補助線の近くにマウスがある場合はカーソルを変更
+            const threshold = 10;
+            let nearLine = false;
+
+            for (let i = 0; i < auxiliaryLines.length; i++) {
+                const line = auxiliaryLines[i];
+                if (line.type === 'vertical') {
+                    const lineX = line.x * imageScale;
+                    if (Math.abs(x - lineX) < threshold) {
+                        canvas.style.cursor = 'ew-resize';
+                        nearLine = true;
+                        break;
+                    }
+                } else if (line.type === 'horizontal') {
+                    const lineY = line.y * imageScale;
+                    if (Math.abs(y - lineY) < threshold) {
+                        canvas.style.cursor = 'ns-resize';
+                        nearLine = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!nearLine) {
+                canvas.style.cursor = 'default';
+            }
+        }
+
+        // マウスアップ処理（ドラッグ終了）
+        function handleCanvasMouseUp(e) {
+            if (isDraggingAuxLine) {
+                isDraggingAuxLine = false;
+                statusText.textContent = '補助線を移動しました';
+            }
+        }
 
         // Canvasクリック処理
         function handleCanvasClick(e) {
@@ -1136,9 +1685,9 @@
         }
 
         // 縦補助線を描画
-        function drawVerticalLine(x) {
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 1;
+        function drawVerticalLine(x, isSelected = false) {
+            ctx.strokeStyle = isSelected ? '#3498db' : '#000000';
+            ctx.lineWidth = isSelected ? 3 : 1;
             ctx.setLineDash([]);
             ctx.beginPath();
             ctx.moveTo(x, 0);
@@ -1147,9 +1696,9 @@
         }
 
         // 横補助線を描画
-        function drawHorizontalLine(y) {
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 1;
+        function drawHorizontalLine(y, isSelected = false) {
+            ctx.strokeStyle = isSelected ? '#3498db' : '#000000';
+            ctx.lineWidth = isSelected ? 3 : 1;
             ctx.setLineDash([]);
             ctx.beginPath();
             ctx.moveTo(0, y);
@@ -1306,6 +1855,37 @@
         showAuxLinesCheckbox.addEventListener('change', redrawAll);
         showBaselinesCheckbox.addEventListener('change', redrawAll);
         showMeasurementsCheckbox.addEventListener('change', redrawAll);
+
+        // ハンバーガーメニューの開閉
+        hamburgerBtn.addEventListener('click', () => {
+            hamburgerBtn.classList.toggle('active');
+            leftPanel.classList.toggle('active');
+            menuOverlay.classList.toggle('active');
+        });
+
+        // オーバーレイをクリックしたらメニューを閉じる
+        menuOverlay.addEventListener('click', () => {
+            hamburgerBtn.classList.remove('active');
+            leftPanel.classList.remove('active');
+            menuOverlay.classList.remove('active');
+        });
+
+        // インフォボタンをクリックしたらモーダルを表示
+        infoBtn.addEventListener('click', () => {
+            infoModal.classList.add('active');
+        });
+
+        // モーダルの閉じるボタン
+        infoModalClose.addEventListener('click', () => {
+            infoModal.classList.remove('active');
+        });
+
+        // モーダルの背景をクリックしたら閉じる
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) {
+                infoModal.classList.remove('active');
+            }
+        });
     </script>
 </body>
 </html>
