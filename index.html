@@ -321,6 +321,54 @@
             color: #ecf0f1;
         }
 
+        .rotation-control {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #34495e;
+            border-radius: 8px;
+        }
+
+        .rotation-control h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #ecf0f1;
+        }
+
+        .rotation-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .rotation-value {
+            text-align: center;
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .rotation-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .rotation-input {
+            flex: 1;
+            padding: 8px;
+            background-color: #2c3e50;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            color: #ecf0f1;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .rotation-input:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
         .display-toggle {
             margin-top: 15px;
             padding: 15px;
@@ -599,12 +647,12 @@
                 font-size: 36px;
             }
 
-            .info-section, .tools-section, .zoom-control, .display-toggle {
+            .info-section, .tools-section, .zoom-control, .rotation-control, .display-toggle {
                 padding: 12px;
                 margin-top: 15px;
             }
 
-            .info-section h2, .tools-section h2, .zoom-control h3, .display-toggle h3 {
+            .info-section h2, .tools-section h2, .zoom-control h3, .rotation-control h3, .display-toggle h3 {
                 font-size: 14px;
                 margin-bottom: 8px;
             }
@@ -681,10 +729,12 @@
             .left-panel .info-section h2,
             .left-panel .tools-section h2,
             .left-panel .zoom-control h3,
+            .left-panel .rotation-control h3,
             .left-panel .display-toggle h3,
             .left-panel .baseline-selector h3,
             .left-panel .status-text,
             .left-panel .zoom-value,
+            .left-panel .rotation-value,
             .left-panel .baseline-label,
             .left-panel .measurements {
                 display: none;
@@ -829,6 +879,12 @@
                 align-items: center;
             }
 
+            .left-panel .rotation-control {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
             .left-panel .display-toggle {
                 display: flex;
                 flex-direction: column;
@@ -861,12 +917,12 @@
                 font-size: 12px;
             }
 
-            .info-section, .tools-section, .zoom-control, .display-toggle {
+            .info-section, .tools-section, .zoom-control, .rotation-control, .display-toggle {
                 padding: 10px;
                 margin-top: 10px;
             }
 
-            .info-section h2, .tools-section h2, .zoom-control h3, .display-toggle h3 {
+            .info-section h2, .tools-section h2, .zoom-control h3, .rotation-control h3, .display-toggle h3 {
                 font-size: 13px;
                 margin-bottom: 6px;
             }
@@ -906,6 +962,10 @@
             }
 
             .zoom-value {
+                font-size: 12px;
+            }
+
+            .rotation-value {
                 font-size: 12px;
             }
 
@@ -954,12 +1014,12 @@
                 font-size: 11px;
             }
 
-            .info-section, .tools-section, .zoom-control, .display-toggle {
+            .info-section, .tools-section, .zoom-control, .rotation-control, .display-toggle {
                 padding: 8px;
                 margin-top: 8px;
             }
 
-            .info-section h2, .tools-section h2, .zoom-control h3, .display-toggle h3 {
+            .info-section h2, .tools-section h2, .zoom-control h3, .rotation-control h3, .display-toggle h3 {
                 font-size: 12px;
             }
 
@@ -1091,6 +1151,16 @@
                     <div class="zoom-value" id="zoomValue">100%</div>
                 </div>
                 
+                <div class="rotation-control" id="rotationControl" style="display: none;">
+                    <h3>画像の回転</h3>
+                    <input type="range" id="rotationSlider" class="rotation-slider" min="0" max="360" value="0" step="1">
+                    <div class="rotation-value" id="rotationValue">0°</div>
+                    <div class="rotation-input-group">
+                        <input type="number" id="rotationInput" class="rotation-input" min="0" max="360" value="0" step="1">
+                        <span style="color: #ecf0f1;">°</span>
+                    </div>
+                </div>
+                
                 <div class="display-toggle" id="displayToggle" style="display: none;">
                     <h3>表示切り替え</h3>
                     <div class="toggle-item">
@@ -1153,6 +1223,10 @@
         const zoomControl = document.getElementById('zoomControl');
         const zoomSlider = document.getElementById('zoomSlider');
         const zoomValue = document.getElementById('zoomValue');
+        const rotationControl = document.getElementById('rotationControl');
+        const rotationSlider = document.getElementById('rotationSlider');
+        const rotationValue = document.getElementById('rotationValue');
+        const rotationInput = document.getElementById('rotationInput');
         const displayToggle = document.getElementById('displayToggle');
         const showAuxLinesCheckbox = document.getElementById('showAuxLines');
         const showBaselinesCheckbox = document.getElementById('showBaselines');
@@ -1169,6 +1243,7 @@
         let ctx = null;
         let img = null;
         let imageScale = 1.0; // 画像の拡大倍率
+        let imageRotation = 0; // 画像の回転角度（度数法）
         let originalImageWidth = 0;
         let originalImageHeight = 0;
         let isBaselineMode = false;
@@ -1249,6 +1324,7 @@
                 setupCanvas();
                 toolsSection.style.display = 'block';
                 zoomControl.style.display = 'block';
+                rotationControl.style.display = 'block';
                 displayToggle.style.display = 'block';
                 saveBtn.disabled = false;
             };
@@ -1271,6 +1347,10 @@
             img.height = displayHeight;
             img.style.width = displayWidth + 'px';
             img.style.height = displayHeight + 'px';
+            
+            // 画像に回転を適用
+            img.style.transform = `rotate(${imageRotation}deg)`;
+            img.style.transformOrigin = 'center center';
 
             // 新しいCanvasを作成
             canvas = document.createElement('canvas');
@@ -1413,6 +1493,40 @@
         zoomSlider.addEventListener('input', (e) => {
             imageScale = e.target.value / 100;
             zoomValue.textContent = e.target.value + '%';
+            setupCanvas();
+        });
+
+        // 回転スライダーのイベント
+        rotationSlider.addEventListener('input', (e) => {
+            imageRotation = parseInt(e.target.value);
+            rotationValue.textContent = e.target.value + '°';
+            rotationInput.value = e.target.value;
+            setupCanvas();
+        });
+
+        // 回転入力フィールドのイベント
+        rotationInput.addEventListener('input', (e) => {
+            let value = parseInt(e.target.value);
+            // 値の範囲チェック
+            if (value < 0) value = 0;
+            if (value > 360) value = 360;
+            if (isNaN(value)) value = 0;
+            
+            imageRotation = value;
+            rotationSlider.value = value;
+            rotationValue.textContent = value + '°';
+            setupCanvas();
+        });
+
+        // 回転入力フィールドのblurイベント（範囲外の値を補正）
+        rotationInput.addEventListener('blur', (e) => {
+            let value = parseInt(e.target.value);
+            if (isNaN(value) || value < 0) value = 0;
+            if (value > 360) value = 360;
+            e.target.value = value;
+            imageRotation = value;
+            rotationSlider.value = value;
+            rotationValue.textContent = value + '°';
             setupCanvas();
         });
 
