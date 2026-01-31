@@ -1450,12 +1450,16 @@
             
             // 測定線を再描画（チェックボックスがONの場合のみ）
             if (showMeasurementsCheckbox.checked) {
+                console.log('📐 [redrawAll] 測定線を再描画:', storedMeasurements.length + '本');
                 measurements.querySelectorAll('.measurement-item').forEach((item, index) => {
                     const measureLine = storedMeasurements[index];
                     if (measureLine && measureLine.points) {
                         const p1 = scalePoint(measureLine.points[0]);
                         const p2 = scalePoint(measureLine.points[1]);
                         drawLine(p1, p2, measureLine.color, true);
+                        // 測定線のラベルを描画
+                        console.log(`  -> ラベル描画: 番号=${index + 1}`);
+                        drawMeasurementLabelOnCanvas(ctx, p1, p2, index + 1, measureLine.color);
                     }
                 });
             }
@@ -1951,46 +1955,58 @@
                 return;
             }
 
-            if (points.length === 2) {
-                if (isBaselineMode) {
-                    // 基準線を描画（スケールなしの座標で保存）
-                    const unscaledP1 = unscalePoint(points[0]);
-                    const unscaledP2 = unscalePoint(points[1]);
-                    const color = colors[baselines.length % colors.length];
-                    drawLine(points[0], points[1], color, false);
-                    const baselineLength = calculateDistance(unscaledP1, unscaledP2);
-                    currentBaseline = {
-                        length: baselineLength,
-                        color: color,
-                        index: baselines.length + 1,
-                        points: [unscaledP1, unscaledP2]
-                    };
-                    baselines.push(currentBaseline);
-                    statusText.textContent = `基準線${currentBaseline.index}を設定しました (長さ = 1.00)`;
-                    measureBtn.disabled = false;
-                    isBaselineMode = false;
-                    baselineBtn.classList.remove('active');
-                    updateBaselineSelector();
-                } else if (isMeasureMode) {
-                    // 測定線を点線で描画（スケールなしの座標で保存）
-                    const unscaledP1 = unscalePoint(points[0]);
-                    const unscaledP2 = unscalePoint(points[1]);
-                    drawLine(points[0], points[1], currentBaseline.color, true);
-                    const measureLength = calculateDistance(unscaledP1, unscaledP2);
-                    const ratio = measureLength / currentBaseline.length;
-                    storedMeasurements.push({
-                        points: [unscaledP1, unscaledP2],
-                        color: currentBaseline.color,
-                        ratio: ratio,
-                        baselineIndex: currentBaseline.index
-                    });
-                    displayMeasurement(ratio, currentBaseline);
-                    statusText.textContent = `測定完了: 比率 = ${ratio.toFixed(2)} (基準線${currentBaseline.index})`;
-                    isMeasureMode = false;
-                    measureBtn.classList.remove('active');
-                    canvas.classList.remove('active');
+            // 基準線・測定モードの場合（点を追加）
+            if (isBaselineMode || isMeasureMode) {
+                points.push({ x, y });
+
+                if (points.length === 1) {
+                    const mode = isBaselineMode ? '基準線' : '測定';
+                    statusText.textContent = `${mode}: 2点目をクリック`;
+                    drawPoint(x, y);
+                    redrawAll();
+                } else if (points.length === 2) {
+                    if (isBaselineMode) {
+                        // 基準線を描画（スケールなしの座標で保存）
+                        const unscaledP1 = unscalePoint(points[0]);
+                        const unscaledP2 = unscalePoint(points[1]);
+                        const color = colors[baselines.length % colors.length];
+                        drawLine(points[0], points[1], color, false);
+                        const baselineLength = calculateDistance(unscaledP1, unscaledP2);
+                        currentBaseline = {
+                            length: baselineLength,
+                            color: color,
+                            index: baselines.length + 1,
+                            points: [unscaledP1, unscaledP2]
+                        };
+                        baselines.push(currentBaseline);
+                        statusText.textContent = `基準線${currentBaseline.index}を設定しました (長さ = 1.00)`;
+                        measureBtn.disabled = false;
+                        isBaselineMode = false;
+                        baselineBtn.classList.remove('active');
+                        canvas.classList.remove('active');
+                        updateBaselineSelector();
+                    } else if (isMeasureMode) {
+                        // 測定線を点線で描画（スケールなしの座標で保存）
+                        const unscaledP1 = unscalePoint(points[0]);
+                        const unscaledP2 = unscalePoint(points[1]);
+                        drawLine(points[0], points[1], currentBaseline.color, true);
+                        const measureLength = calculateDistance(unscaledP1, unscaledP2);
+                        const ratio = measureLength / currentBaseline.length;
+                        storedMeasurements.push({
+                            points: [unscaledP1, unscaledP2],
+                            color: currentBaseline.color,
+                            ratio: ratio,
+                            baselineIndex: currentBaseline.index
+                        });
+                        displayMeasurement(ratio, currentBaseline);
+                        statusText.textContent = `測定完了: 比率 = ${ratio.toFixed(2)} (基準線${currentBaseline.index})`;
+                        isMeasureMode = false;
+                        measureBtn.classList.remove('active');
+                        canvas.classList.remove('active');
+                    }
+                    points = [];
+                    redrawAll();
                 }
-                points = [];
             }
         }
 
@@ -2165,11 +2181,17 @@
             });
             
             // 測定線を描画
-            storedMeasurements.forEach(measureLine => {
+            console.log('🎨 [描画] 測定線の描画開始:', storedMeasurements.length + '本');
+            storedMeasurements.forEach((measureLine, index) => {
+                console.log(`  測定線 ${index + 1}:`, measureLine);
                 if (measureLine.points) {
                     const p1 = { x: measureLine.points[0].x * scale, y: measureLine.points[0].y * scale };
                     const p2 = { x: measureLine.points[1].x * scale, y: measureLine.points[1].y * scale };
+                    console.log(`  -> p1:`, p1, 'p2:', p2, 'color:', measureLine.color);
                     drawLineOnCanvas(ctx, p1, p2, measureLine.color, true);
+                    // 測定線の横に番号と比率を表示
+                    console.log(`  -> ラベル描画を呼び出し: 番号=${index + 1}`);
+                    drawMeasurementLabel(ctx, p1, p2, index + 1, measureLine.color);
                 }
             });
             
@@ -2181,6 +2203,105 @@
                     drawHorizontalLineOnCanvas(ctx, line.y * scale, width);
                 }
             });
+        }
+
+        // 測定線のラベルを描画（保存用）
+        function drawMeasurementLabel(ctx, p1, p2, number, color) {
+            console.log('📝 [ラベル描画] drawMeasurementLabel呼び出し:', { p1, p2, number, color });
+            
+            // 始点を基準点とする
+            const baseX = p1.x;
+            const baseY = p1.y;
+            console.log('  基準点(始点):', { baseX, baseY });
+            
+            // 線の角度を計算（p1からp2への方向）
+            const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+            
+            // 終点と反対方向（180度反転）にオフセット
+            const offsetDistance = 20;
+            const offsetX = -Math.cos(angle) * offsetDistance;
+            const offsetY = -Math.sin(angle) * offsetDistance;
+            
+            const labelX = baseX + offsetX;
+            const labelY = baseY + offsetY;
+            console.log('  ラベル位置:', { labelX, labelY });
+            
+            // テキストの設定
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // テキストの背景（半透明の白）
+            const text = `${number}`;
+            const metrics = ctx.measureText(text);
+            const padding = 3;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            
+            // 背景の四角形を描画
+            const rectX = labelX - metrics.width / 2 - padding;
+            const rectY = labelY - 6 - padding;
+            const rectWidth = metrics.width + padding * 2;
+            const rectHeight = 12 + padding * 2;
+            
+            ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+            ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
+            
+            // テキストを描画
+            ctx.fillStyle = color;
+            ctx.fillText(text, labelX, labelY);
+            console.log('  ✅ ラベル描画完了:', text, 'at', { labelX, labelY });
+        }
+
+        // 測定線のラベルを描画（画面表示用）
+        function drawMeasurementLabelOnCanvas(ctx, p1, p2, number, color) {
+            console.log('📝 [画面ラベル描画] drawMeasurementLabelOnCanvas呼び出し:', { p1, p2, number, color });
+            
+            // 始点を基準点とする
+            const baseX = p1.x;
+            const baseY = p1.y;
+            
+            // 線の角度を計算（p1からp2への方向）
+            const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+            
+            // 終点と反対方向（180度反転）にオフセット
+            const offsetDistance = 20;
+            const offsetX = -Math.cos(angle) * offsetDistance;
+            const offsetY = -Math.sin(angle) * offsetDistance;
+            
+            const labelX = baseX + offsetX;
+            const labelY = baseY + offsetY;
+            console.log('  画面ラベル位置:', { labelX, labelY });
+            
+            // テキストの設定
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // テキストの背景（半透明の白）
+            const text = `${number}`;
+            const metrics = ctx.measureText(text);
+            const padding = 3;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            
+            // 背景の四角形を描画
+            const rectX = labelX - metrics.width / 2 - padding;
+            const rectY = labelY - 6 - padding;
+            const rectWidth = metrics.width + padding * 2;
+            const rectHeight = 12 + padding * 2;
+            
+            ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+            ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
+            
+            // テキストを描画
+            ctx.fillStyle = color;
+            ctx.fillText(text, labelX, labelY);
+            console.log('  ✅ 画面ラベル描画完了:', text);
         }
 
         // 指定されたキャンバスに線を描画
