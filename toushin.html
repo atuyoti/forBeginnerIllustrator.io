@@ -961,16 +961,32 @@
             
             // Draw copied boxes
             copiedBoxes.forEach((copiedBox) => {
-                ctx.drawImage(copiedBox.canvas, copiedBox.x, copiedBox.y, copiedBox.scaledWidth, copiedBox.scaledHeight);
+                // Get the source box to determine the right edge position
+                const sourceBox = storedBoxes[copiedBox.sourceBoxIndex];
+                if (!sourceBox || !sourceBox.p1 || !sourceBox.p2) return;
+
+                // Calculate the right edge of the source box with current zoom
+                const sourceP1 = scalePoint(sourceBox.p1);
+                const sourceP2 = scalePoint(sourceBox.p2);
+                const sourceX2 = Math.max(sourceP1.x, sourceP2.x);
+
+                // Calculate position with current zoom level
+                const displayX = sourceX2 + 20;
+                const displayY = copiedBox.unscaledY * imageScale;
+                const displayWidth = copiedBox.unscaledWidth * imageScale;
+                const displayHeight = copiedBox.unscaledHeight * imageScale;
+
+                ctx.drawImage(copiedBox.canvas, displayX, displayY, displayWidth, displayHeight);
+                
                 // Draw border around copied box
                 ctx.strokeStyle = '#f1c40f';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([5, 5]);
-                ctx.strokeRect(copiedBox.x, copiedBox.y, copiedBox.scaledWidth, copiedBox.scaledHeight);
+                ctx.strokeRect(displayX, displayY, displayWidth, displayHeight);
                 ctx.setLineDash([]);
                 
                 // Draw horizontal line at the bottom of copied box
-                const lineY = copiedBox.y + copiedBox.scaledHeight;
+                const lineY = displayY + displayHeight;
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = 1;
                 ctx.setLineDash([]);
@@ -1081,24 +1097,22 @@
                 let copiesCount = 0;
 
                 // Repeat copying down until reaching the bottom of the canvas
-                while (copyY < canvas.height) {
-                    // Store the copied box
+                let copyYUnscaled = y1 / imageScale;  // Convert to unscaled coordinate
+                while (copyYUnscaled < originalImageHeight) {
+                    // Store the copied box with unscaled coordinates
                     copiedBoxes.push({
                         canvas: copyCanvas,
                         originalBox: box,
                         sourceBoxIndex: selectedBoxIndex,
-                        x: copyX,
-                        y: copyY,
-                        width: width,
-                        height: height,
-                        scaledWidth: unscaledWidth,
-                        scaledHeight: unscaledHeight
+                        unscaledY: copyYUnscaled,  // Store unscaled Y position
+                        unscaledWidth: unscaledWidth,
+                        unscaledHeight: unscaledHeight
                     });
 
                     copiesCount++;
-                    copyY += unscaledHeight;
+                    copyYUnscaled += unscaledHeight;  // Use unscaled height for next position
 
-                    console.log(`Copy ${copiesCount} added:`, { x: copyX, y: copyY - unscaledHeight });
+                    console.log(`Copy ${copiesCount} added (unscaled Y: ${copyYUnscaled - unscaledHeight})`);
                 }
 
                 console.log('Total copies created:', { copiesCount, totalInCanvas: copiedBoxes.length });
