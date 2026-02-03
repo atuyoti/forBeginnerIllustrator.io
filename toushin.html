@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>頭身測定ツール</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .left-panel {
+            width: 300px;
+            min-width: 300px;
+            max-width: 300px;
+            background-color: #2c3e50;
+            padding: 20px;
+            color: white;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .right-panel {
+            flex: 1;
+            background-color: #ecf0f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: auto;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .home-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .home-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .drop-zone {
+            border: 3px dashed #3498db;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            background-color: #34495e;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone:hover {
+            background-color: #3d5a6f;
+            border-color: #5dade2;
+        }
+
+        .drop-zone.dragover {
+            background-color: #3d5a6f;
+            border-color: #2ecc71;
+            transform: scale(1.02);
+        }
+
+        .drop-zone-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .drop-zone-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .image-container {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+
+        .image-container img {
+            display: block;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .no-image {
+            color: #95a5a6;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .info-section {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #34495e;
+            border-radius: 8px;
+        }
+
+        .info-section h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #bdc3c7;
+        }
+
+        .tools-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #34495e;
+            border-radius: 8px;
+        }
+
+        .tools-section h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-primary.active {
+            background-color: #2ecc71;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+            pointer-events: none;
+        }
+
+        .canvas-overlay.active {
+            pointer-events: auto;
+        }
+
+        .confirm-btn {
+            position: absolute;
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            z-index: 100;
+            display: none;
+        }
+
+        .confirm-btn:hover {
+            background-color: #27ae60;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .confirm-btn.visible {
+            display: block;
+        }
+
+        .status-text {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #ecf0f1;
+            text-align: center;
+        }
+
+        .btn-tertiary {
+            background-color: #34495e;
+            color: white;
+        }
+
+        .btn-tertiary:hover {
+            background-color: #4a5f7f;
+        }
+
+        .btn-tertiary.active {
+            background-color: #2ecc71;
+        }
+
+        .btn:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .aux-lines-group {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .aux-lines-group .btn {
+            width: calc(50% - 2.5px);
+        }
+
+        .btn-success {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #229954;
+        }
+
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent, #95a5a6, transparent);
+            margin: 20px 0;
+            border: none;
+        }
+
+        .zoom-control {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #34495e;
+            border-radius: 8px;
+        }
+
+        .zoom-control h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #ecf0f1;
+        }
+
+        .rotation-control {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #34495e;
+            border-radius: 8px;
+        }
+
+        .rotation-control h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #ecf0f1;
+        }
+
+        .rotation-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .rotation-value {
+            text-align: center;
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .rotation-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .rotation-input {
+            flex: 1;
+            padding: 8px;
+            background-color: #2c3e50;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            color: #ecf0f1;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .rotation-input:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+        .display-toggle {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #34495e;
+            border-radius: 8px;
+        }
+
+        .display-toggle h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #ecf0f1;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            cursor: pointer;
+        }
+
+        .toggle-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .toggle-item label {
+            font-size: 13px;
+            color: #ecf0f1;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .zoom-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .zoom-value {
+            text-align: center;
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #2c3e50;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            border: none;
+        }
+
+        .boxes {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #2c3e50;
+            border-radius: 6px;
+            font-size: 12px;
+            max-width: 100%;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        .box-item {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #34495e;
+            border-radius: 4px;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left-panel {
+                width: 100%;
+                min-width: 100%;
+                max-width: 100%;
+                height: auto;
+                max-height: 40vh;
+                overflow-y: auto;
+                padding: 15px;
+            }
+
+            .right-panel {
+                height: 60vh;
+            }
+
+            h1 {
+                font-size: 18px;
+                margin-bottom: 15px;
+            }
+
+            .drop-zone {
+                padding: 30px 15px;
+            }
+
+            .drop-zone-icon {
+                font-size: 36px;
+            }
+
+            .info-section, .tools-section, .zoom-control, .rotation-control, .display-toggle {
+                padding: 12px;
+                margin-top: 15px;
+            }
+
+            .info-section h2, .tools-section h2, .zoom-control h3, .rotation-control h3, .display-toggle h3 {
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+
+            .btn {
+                padding: 10px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                overflow: auto;
+            }
+
+            .container {
+                height: auto;
+                min-height: 100vh;
+                flex-direction: row;
+            }
+
+            .left-panel {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 80px;
+                max-width: 80px;
+                min-width: 80px;
+                height: 100vh;
+                max-height: 100vh;
+                padding: 10px;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                overflow-y: auto;
+            }
+
+            .left-panel.active {
+                left: 0;
+            }
+
+            .left-panel h1,
+            .left-panel .info-section p,
+            .left-panel .info-section h2,
+            .left-panel .tools-section h2,
+            .left-panel .zoom-control h3,
+            .left-panel .rotation-control h3,
+            .left-panel .display-toggle h3,
+            .left-panel .status-text,
+            .left-panel .zoom-value,
+            .left-panel .rotation-value,
+            .left-panel .boxes {
+                display: none;
+            }
+
+            .left-panel .drop-zone-text {
+                display: none;
+            }
+
+            .left-panel .btn {
+                font-size: 0;
+                padding: 12px 5px;
+                width: 100%;
+            }
+
+            .left-panel .aux-lines-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .left-panel .aux-lines-group .btn {
+                width: 100%;
+            }
+
+            .left-panel .toggle-item {
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+
+            .left-panel .toggle-item label {
+                display: none;
+            }
+
+            .left-panel .toggle-item input[type="checkbox"] {
+                margin-right: 0;
+                width: 24px;
+                height: 24px;
+            }
+
+            .right-panel {
+                width: 100%;
+                height: 100vh;
+                min-height: 100vh;
+                overflow: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            h1 {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+
+            .drop-zone {
+                padding: 20px 10px;
+            }
+
+            .drop-zone-icon {
+                font-size: 32px;
+                margin-bottom: 10px;
+            }
+
+            .info-section, .tools-section, .zoom-control, .rotation-control, .display-toggle {
+                padding: 10px;
+                margin-top: 10px;
+            }
+
+            .info-section h2, .tools-section h2, .zoom-control h3, .rotation-control h3, .display-toggle h3 {
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+
+            .info-section p {
+                font-size: 11px;
+            }
+
+            .btn {
+                padding: 8px;
+                font-size: 12px;
+                margin-bottom: 8px;
+            }
+
+            .boxes {
+                font-size: 11px;
+                padding: 8px;
+                max-width: 100%;
+            }
+
+            .zoom-value {
+                font-size: 12px;
+            }
+
+            .rotation-value {
+                font-size: 12px;
+            }
+
+            .image-container {
+                max-width: 95%;
+                max-height: 95%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .left-panel {
+                padding: 8px;
+                width: 70px;
+                max-width: 70px;
+                min-width: 70px;
+            }
+
+            .right-panel {
+                min-height: 100vh;
+            }
+
+            h1 {
+                font-size: 14px;
+            }
+
+            .drop-zone {
+                padding: 15px 8px;
+            }
+
+            .drop-zone-icon {
+                font-size: 28px;
+            }
+
+            .info-section, .tools-section, .zoom-control, .rotation-control, .display-toggle {
+                padding: 8px;
+                margin-top: 8px;
+            }
+
+            .btn {
+                padding: 6px;
+                font-size: 11px;
+                margin-bottom: 6px;
+            }
+
+            .aux-lines-group {
+                gap: 3px;
+            }
+
+            .aux-lines-group .btn {
+                width: calc(50% - 1.5px);
+            }
+
+            .boxes {
+                font-size: 10px;
+                padding: 6px;
+                max-width: 100%;
+            }
+
+            .box-item {
+                padding: 4px;
+                margin: 3px 0;
+                font-size: 9px;
+                line-height: 1.3;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <a href="index.html" class="home-btn">🏠 ホーム</a>
+            
+            <h1>頭身測定ツール</h1>
+            
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-icon">📁</div>
+                <div class="drop-zone-text">
+                    画像をここにドラッグ＆ドロップ<br>
+                    またはクリックして選択
+                </div>
+            </div>
+            
+            <input type="file" id="fileInput" class="file-input" accept="image/*">
+            
+            <div class="tools-section" id="toolsSection" style="display: none;">
+                <h2>頭身測定</h2>
+                <button class="btn btn-primary" id="drawBoxBtn">📦 枠を描画</button>
+                
+                <hr class="section-divider">
+                
+                <h2>補助</h2>
+                <div class="aux-lines-group">
+                    <button class="btn btn-tertiary" id="verticalAuxBtn">縦</button>
+                    <button class="btn btn-tertiary" id="horizontalAuxBtn">横</button>
+                </div>
+                
+                <hr class="section-divider">
+                <hr class="section-divider">
+                
+                <h2>保存</h2>
+                <button class="btn btn-success" id="saveBtn" disabled>💾 画像を保存</button>
+                
+                <div class="status-text" id="statusText"></div>
+                
+                <div class="zoom-control" id="zoomControl" style="display: none;">
+                    <h3>画像の拡大縮小</h3>
+                    <input type="range" id="zoomSlider" class="zoom-slider" min="50" max="200" value="100" step="5">
+                    <div class="zoom-value" id="zoomValue">100%</div>
+                </div>
+                
+                <div class="rotation-control" id="rotationControl" style="display: none;">
+                    <h3>画像の回転</h3>
+                    <input type="range" id="rotationSlider" class="rotation-slider" min="0" max="360" value="0" step="1">
+                    <div class="rotation-value" id="rotationValue">0°</div>
+                    <div class="rotation-input-group">
+                        <input type="number" id="rotationInput" class="rotation-input" min="0" max="360" value="0" step="1">
+                        <span style="color: #ecf0f1;">°</span>
+                    </div>
+                </div>
+                
+                <div class="display-toggle" id="displayToggle" style="display: none;">
+                    <h3>表示切り替え</h3>
+                    <div class="toggle-item">
+                        <input type="checkbox" id="showAuxLines" checked>
+                        <label for="showAuxLines">補助線を表示</label>
+                    </div>
+                    <div class="toggle-item">
+                        <input type="checkbox" id="showBoxes" checked>
+                        <label for="showBoxes">枠を表示</label>
+                    </div>
+                </div>
+                
+                <div class="boxes" id="boxes" style="display: none;"></div>
+            </div>
+            
+            <div class="info-section">
+                <h2>頭身測定の使い方</h2>
+                <p>
+                    1. 左の枠に画像をドラッグ＆ドロップ<br>
+                    2. 右側に画像が表示されます<br>
+                    3. 「📦 枠を描画」ボタンをクリック<br>
+                    4. 画像上で2点をクリックして四角い枠を描画<br>
+                    5. 3,4を繰り返して複数の枠を描画可能です<br>
+                </p>
+                <h2>補助線の使い方</h2>
+                <p>
+                    補助線は画像上に垂直または水平のガイドラインを引くためのツールです。<br>
+                    「縦」または「横」ボタンをクリックし、画像上で1点をクリックすると補助線が描画されます。<br>
+                    枠描画の際に位置合わせの参考としてご利用ください。
+                </p>
+            </div>
+        </div>
+
+        <div class="right-panel" id="rightPanel">
+            <div class="no-image">画像を選択してください</div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const rightPanel = document.getElementById('rightPanel');
+        const toolsSection = document.getElementById('toolsSection');
+        const drawBoxBtn = document.getElementById('drawBoxBtn');
+        const verticalAuxBtn = document.getElementById('verticalAuxBtn');
+        const horizontalAuxBtn = document.getElementById('horizontalAuxBtn');
+        const zoomControl = document.getElementById('zoomControl');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
+        const rotationControl = document.getElementById('rotationControl');
+        const rotationSlider = document.getElementById('rotationSlider');
+        const rotationValue = document.getElementById('rotationValue');
+        const rotationInput = document.getElementById('rotationInput');
+        const displayToggle = document.getElementById('displayToggle');
+        const showAuxLinesCheckbox = document.getElementById('showAuxLines');
+        const showBoxesCheckbox = document.getElementById('showBoxes');
+        const statusText = document.getElementById('statusText');
+        const boxes = document.getElementById('boxes');
+        const saveBtn = document.getElementById('saveBtn');
+
+        let canvas = null;
+        let ctx = null;
+        let img = null;
+        let imageScale = 1.0;
+        let imageRotation = 0;
+        let originalImageWidth = 0;
+        let originalImageHeight = 0;
+        let isDrawBoxMode = false;
+        let isVerticalAuxMode = false;
+        let isHorizontalAuxMode = false;
+        let points = [];
+        let storedBoxes = [];
+        let copiedBoxes = [];
+        let auxiliaryLines = [];
+        let selectedAuxLineIndex = null;
+        let isDraggingAuxLine = false;
+        let selectedBoxIndex = null;
+        let selectedVertexIndex = null;
+        let isDraggingVertex = false;
+        let confirmBtn = null;
+        
+        const colors = ['#e74c3c', '#9b59b6', '#3498db', '#1abc9c', '#f39c12', '#e67e22', '#95a5a6'];
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                handleImageFile(files[0]);
+            }
+        });
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length > 0) {
+                handleImageFile(files[0]);
+            }
+        });
+
+        function handleImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imageUrl = e.target.result;
+                displayImage(imageUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function displayImage(imageUrl) {
+            rightPanel.innerHTML = `
+                <div class="image-container" id="imageContainer">
+                    <img src="${imageUrl}" alt="アップロードされた画像" id="displayImage">
+                </div>
+            `;
+
+            img = document.getElementById('displayImage');
+            img.onload = () => {
+                originalImageWidth = img.naturalWidth;
+                originalImageHeight = img.naturalHeight;
+                setupCanvas();
+                toolsSection.style.display = 'block';
+                zoomControl.style.display = 'block';
+                rotationControl.style.display = 'block';
+                displayToggle.style.display = 'block';
+                saveBtn.disabled = false;
+            };
+        }
+
+        function setupCanvas() {
+            const container = document.getElementById('imageContainer');
+            const oldCanvas = document.getElementById('drawCanvas');
+            if (oldCanvas) oldCanvas.remove();
+
+            const displayWidth = originalImageWidth * imageScale;
+            const displayHeight = originalImageHeight * imageScale;
+            
+            img.width = displayWidth;
+            img.height = displayHeight;
+            img.style.width = displayWidth + 'px';
+            img.style.height = displayHeight + 'px';
+            img.style.transform = `rotate(${imageRotation}deg)`;
+            img.style.transformOrigin = 'center center';
+
+            canvas = document.createElement('canvas');
+            canvas.id = 'drawCanvas';
+            canvas.className = 'canvas-overlay';
+            canvas.width = displayWidth;
+            canvas.height = displayHeight;
+            canvas.style.width = displayWidth + 'px';
+            canvas.style.height = displayHeight + 'px';
+            
+            ctx = canvas.getContext('2d');
+            container.appendChild(canvas);
+
+            console.log('setupCanvas:', { displayWidth, displayHeight, storedBoxes: storedBoxes.length });
+            
+            if (isDrawBoxMode || isVerticalAuxMode || isHorizontalAuxMode || isDraggingAuxLine || auxiliaryLines.length > 0 || storedBoxes.length > 0) {
+                canvas.classList.add('active');
+                console.log('Canvas set to active');
+            } else {
+                console.log('Canvas NOT set to active');
+            }
+
+            canvas.addEventListener('click', handleCanvasClick);
+            canvas.addEventListener('mousedown', handleCanvasMouseDown);
+            canvas.addEventListener('mousemove', handleCanvasMouseMove);
+            canvas.addEventListener('mouseup', handleCanvasMouseUp);
+            canvas.addEventListener('touchstart', handleCanvasTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleCanvasTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleCanvasTouchEnd);
+            canvas.addEventListener('touchcancel', handleCanvasTouchEnd);
+            
+            console.log('Event listeners attached to canvas');
+            
+            // Create confirm button if it doesn't exist
+            if (!confirmBtn) {
+                confirmBtn = document.createElement('button');
+                confirmBtn.className = 'confirm-btn';
+                confirmBtn.textContent = '✓ 確定';
+                const container = document.getElementById('imageContainer');
+                container.appendChild(confirmBtn);
+                confirmBtn.addEventListener('click', handleConfirmBox);
+            }
+            
+            redrawAll();
+            
+            setTimeout(() => {
+                const scrollLeft = Math.max(0, (displayWidth - rightPanel.clientWidth) / 2);
+                const scrollTop = Math.max(0, (displayHeight - rightPanel.clientHeight) / 2);
+                rightPanel.scrollLeft = scrollLeft;
+                rightPanel.scrollTop = scrollTop;
+            }, 0);
+        }
+
+        function redrawAll() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            console.log('redrawAll - Stored boxes:', storedBoxes.length, storedBoxes);
+            
+            if (showBoxesCheckbox.checked) {
+                storedBoxes.forEach((box, boxIndex) => {
+                    if (box.p1 && box.p2) {
+                        const p1 = scalePoint(box.p1);
+                        const p2 = scalePoint(box.p2);
+                        const isSelected = (boxIndex === selectedBoxIndex);
+                        console.log(`Drawing box ${boxIndex}:`, { p1, p2, isSelected });
+                        drawBox(p1, p2, box.color, isSelected);
+                    }
+                });
+            }
+            
+            if (showAuxLinesCheckbox.checked) {
+                auxiliaryLines.forEach((line, index) => {
+                    const isSelected = (index === selectedAuxLineIndex);
+                    if (line.type === 'vertical') {
+                        drawVerticalLine(line.x * imageScale, isSelected);
+                    } else if (line.type === 'horizontal') {
+                        drawHorizontalLine(line.y * imageScale, isSelected);
+                    }
+                });
+            }
+            
+            // Draw copied boxes
+            copiedBoxes.forEach((copiedBox) => {
+                ctx.drawImage(copiedBox.canvas, copiedBox.x, copiedBox.y, copiedBox.scaledWidth, copiedBox.scaledHeight);
+                // Draw border around copied box
+                ctx.strokeStyle = '#f1c40f';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(copiedBox.x, copiedBox.y, copiedBox.scaledWidth, copiedBox.scaledHeight);
+                ctx.setLineDash([]);
+                
+                // Draw horizontal line at the bottom of copied box
+                const lineY = copiedBox.y + copiedBox.scaledHeight;
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.moveTo(0, lineY);
+                ctx.lineTo(canvas.width, lineY);
+                ctx.stroke();
+            });
+            
+            // Update confirm button position if a box is selected
+            updateConfirmButtonPosition();
+        }
+
+        function scalePoint(point) {
+            return { x: point.x * imageScale, y: point.y * imageScale };
+        }
+
+        function unscalePoint(point) {
+            return { x: point.x / imageScale, y: point.y / imageScale };
+        }
+
+        function updateConfirmButtonPosition() {
+            if (!confirmBtn || selectedBoxIndex === null) {
+                confirmBtn?.classList.remove('visible');
+                return;
+            }
+
+            const box = storedBoxes[selectedBoxIndex];
+            if (!box.p1 || !box.p2) {
+                confirmBtn?.classList.remove('visible');
+                return;
+            }
+
+            const p1 = scalePoint(box.p1);
+            const p2 = scalePoint(box.p2);
+            const x1 = Math.min(p1.x, p2.x);
+            const y1 = Math.min(p1.y, p2.y);
+            const x2 = Math.max(p1.x, p2.x);
+
+            const canvasRect = canvas.getBoundingClientRect();
+            const buttonWidth = 80;
+            const buttonX = x1 + (x2 - x1 - buttonWidth) / 2;
+            const buttonY = Math.max(0, y1 - 35);
+
+            confirmBtn.style.left = buttonX + 'px';
+            confirmBtn.style.top = buttonY + 'px';
+            confirmBtn.classList.add('visible');
+
+            console.log('Button position updated:', { x: buttonX, y: buttonY });
+        }
+
+        function handleConfirmBox() {
+            if (selectedBoxIndex === null) return;
+
+            const box = storedBoxes[selectedBoxIndex];
+            if (!box.p1 || !box.p2) return;
+
+            console.log('Confirming box:', selectedBoxIndex, box);
+
+            // Extract box content
+            const p1 = scalePoint(box.p1);
+            const p2 = scalePoint(box.p2);
+            const x1 = Math.min(p1.x, p2.x);
+            const y1 = Math.min(p1.y, p2.y);
+            const x2 = Math.max(p1.x, p2.x);
+            const y2 = Math.max(p1.y, p2.y);
+            const width = x2 - x1;
+            const height = y2 - y1;
+
+            console.log('Box coordinates (scaled):', { x1, y1, x2, y2, width, height });
+
+            // Create a temporary canvas to extract the image from the original image
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = originalImageWidth;
+            tempCanvas.height = originalImageHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw the original image onto the temp canvas
+            tempCtx.save();
+            tempCtx.translate(originalImageWidth / 2, originalImageHeight / 2);
+            tempCtx.rotate((imageRotation * Math.PI) / 180);
+            tempCtx.drawImage(img, -originalImageWidth / 2, -originalImageHeight / 2, originalImageWidth, originalImageHeight);
+            tempCtx.restore();
+
+            // Get the image data from the unscaled box coordinates
+            const unscaledX1 = Math.min(box.p1.x, box.p2.x);
+            const unscaledY1 = Math.min(box.p1.y, box.p2.y);
+            const unscaledX2 = Math.max(box.p1.x, box.p2.x);
+            const unscaledY2 = Math.max(box.p1.y, box.p2.y);
+            const unscaledWidth = unscaledX2 - unscaledX1;
+            const unscaledHeight = unscaledY2 - unscaledY1;
+
+            console.log('Box coordinates (unscaled):', { unscaledX1, unscaledY1, unscaledWidth, unscaledHeight });
+
+            try {
+                const imageData = tempCtx.getImageData(unscaledX1, unscaledY1, unscaledWidth, unscaledHeight);
+                
+                // Create a copy canvas
+                const copyCanvas = document.createElement('canvas');
+                copyCanvas.width = unscaledWidth;
+                copyCanvas.height = unscaledHeight;
+                const copyCtx = copyCanvas.getContext('2d');
+                copyCtx.putImageData(imageData, 0, 0);
+
+                // Calculate starting position for the first copy
+                let copyX = x2 + 20;
+                let copyY = y1;
+                let copiesCount = 0;
+
+                // Repeat copying down until reaching the bottom of the canvas
+                while (copyY < canvas.height) {
+                    // Store the copied box
+                    copiedBoxes.push({
+                        canvas: copyCanvas,
+                        originalBox: box,
+                        sourceBoxIndex: selectedBoxIndex,
+                        x: copyX,
+                        y: copyY,
+                        width: width,
+                        height: height,
+                        scaledWidth: unscaledWidth,
+                        scaledHeight: unscaledHeight
+                    });
+
+                    copiesCount++;
+                    copyY += unscaledHeight;
+
+                    console.log(`Copy ${copiesCount} added:`, { x: copyX, y: copyY - unscaledHeight });
+                }
+
+                console.log('Total copies created:', { copiesCount, totalInCanvas: copiedBoxes.length });
+
+                // Draw copied boxes
+                redrawAll();
+                statusText.textContent = `${copiesCount}枚のコピーを配置しました`;
+            } catch (error) {
+                console.error('Error copying box:', error);
+                statusText.textContent = 'エラー: 枠のコピーに失敗しました';
+            }
+        }
+
+        zoomSlider.addEventListener('input', (e) => {
+            imageScale = e.target.value / 100;
+            zoomValue.textContent = e.target.value + '%';
+            setupCanvas();
+        });
+
+        rotationSlider.addEventListener('input', (e) => {
+            imageRotation = parseInt(e.target.value);
+            rotationValue.textContent = e.target.value + '°';
+            rotationInput.value = e.target.value;
+            setupCanvas();
+        });
+
+        rotationInput.addEventListener('input', (e) => {
+            let value = parseInt(e.target.value);
+            if (value < 0) value = 0;
+            if (value > 360) value = 360;
+            if (isNaN(value)) value = 0;
+            imageRotation = value;
+            rotationSlider.value = value;
+            rotationValue.textContent = value + '°';
+            setupCanvas();
+        });
+
+        rotationInput.addEventListener('blur', (e) => {
+            let value = parseInt(e.target.value);
+            if (isNaN(value) || value < 0) value = 0;
+            if (value > 360) value = 360;
+            e.target.value = value;
+            imageRotation = value;
+            rotationSlider.value = value;
+            rotationValue.textContent = value + '°';
+            setupCanvas();
+        });
+
+        drawBoxBtn.addEventListener('click', () => {
+            isDrawBoxMode = !isDrawBoxMode;
+            isVerticalAuxMode = false;
+            isHorizontalAuxMode = false;
+            points = [];
+            
+            if (isDrawBoxMode) {
+                drawBoxBtn.classList.add('active');
+                canvas.classList.add('active');
+                verticalAuxBtn.classList.remove('active');
+                horizontalAuxBtn.classList.remove('active');
+                statusText.textContent = '枠描画: 1点目をクリック';
+            } else {
+                drawBoxBtn.classList.remove('active');
+                if (auxiliaryLines.length === 0) {
+                    canvas.classList.remove('active');
+                }
+                statusText.textContent = '';
+            }
+        });
+
+        verticalAuxBtn.addEventListener('click', () => {
+            isVerticalAuxMode = !isVerticalAuxMode;
+            isHorizontalAuxMode = false;
+            isDrawBoxMode = false;
+            points = [];
+            
+            if (isVerticalAuxMode) {
+                verticalAuxBtn.classList.add('active');
+                canvas.classList.add('active');
+                horizontalAuxBtn.classList.remove('active');
+                drawBoxBtn.classList.remove('active');
+                statusText.textContent = '縦補助線: 1点をクリック';
+            } else {
+                verticalAuxBtn.classList.remove('active');
+                if (auxiliaryLines.length === 0) {
+                    canvas.classList.remove('active');
+                }
+                statusText.textContent = '';
+            }
+        });
+
+        horizontalAuxBtn.addEventListener('click', () => {
+            isHorizontalAuxMode = !isHorizontalAuxMode;
+            isVerticalAuxMode = false;
+            isDrawBoxMode = false;
+            points = [];
+            
+            if (isHorizontalAuxMode) {
+                horizontalAuxBtn.classList.add('active');
+                canvas.classList.add('active');
+                verticalAuxBtn.classList.remove('active');
+                drawBoxBtn.classList.remove('active');
+                statusText.textContent = '横補助線: 1点をクリック';
+            } else {
+                horizontalAuxBtn.classList.remove('active');
+                if (auxiliaryLines.length === 0) {
+                    canvas.classList.remove('active');
+                }
+                statusText.textContent = '';
+            }
+        });
+
+        function handleCanvasMouseDown(e) {
+            if (isDrawBoxMode || isVerticalAuxMode || isHorizontalAuxMode) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const threshold = 15;
+
+            console.log('=== handleCanvasMouseDown ===');
+            console.log('Mouse position:', { x, y });
+            console.log('Canvas rect:', { left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+            console.log('Stored boxes count:', storedBoxes.length);
+            console.log('Image scale:', imageScale);
+            console.log('Canvas dimensions:', { width: canvas.width, height: canvas.height });
+            for (let boxIndex = 0; boxIndex < storedBoxes.length; boxIndex++) {
+                const box = storedBoxes[boxIndex];
+                if (!box.p1 || !box.p2) continue;
+                
+                const p1 = scalePoint(box.p1);
+                const p2 = scalePoint(box.p2);
+                const x1 = Math.min(p1.x, p2.x);
+                const y1 = Math.min(p1.y, p2.y);
+                const x2 = Math.max(p1.x, p2.x);
+                const y2 = Math.max(p1.y, p2.y);
+                
+                console.log(`Box ${boxIndex}:`, { p1: box.p1, p2: box.p2, scaledP1: p1, scaledP2: p2, x1, y1, x2, y2 });
+                
+                const vertices = [
+                    { x: x1, y: y1, index: 0 },
+                    { x: x2, y: y1, index: 1 },
+                    { x: x1, y: y2, index: 2 },
+                    { x: x2, y: y2, index: 3 }
+                ];
+                
+                for (let vIndex = 0; vIndex < vertices.length; vIndex++) {
+                    const vertex = vertices[vIndex];
+                    const dx = x - vertex.x;
+                    const dy = y - vertex.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    console.log(`  Vertex ${vIndex}:`, { vertex, distance, threshold, isWithinThreshold: distance < threshold });
+                    
+                    if (distance < threshold) {
+                        console.log('✓ Vertex selected!', { boxIndex, vIndex });
+                        e.preventDefault();
+                        selectedBoxIndex = boxIndex;
+                        selectedVertexIndex = vIndex;
+                        isDraggingVertex = true;
+                        canvas.style.cursor = 'grab';
+                        redrawAll();
+                        statusText.textContent = '頂点を選択 - ドラッグで移動';
+                        return;
+                    }
+                }
+            }
+
+            // Check for auxiliary lines
+            for (let i = 0; i < auxiliaryLines.length; i++) {
+                const line = auxiliaryLines[i];
+                if (line.type === 'vertical') {
+                    const lineX = line.x * imageScale;
+                    if (Math.abs(x - lineX) < threshold) {
+                        e.preventDefault();
+                        selectedAuxLineIndex = i;
+                        isDraggingAuxLine = true;
+                        canvas.style.cursor = 'ew-resize';
+                        redrawAll();
+                        statusText.textContent = '縦補助線を選択 - 左右にドラッグで移動';
+                        return;
+                    }
+                } else if (line.type === 'horizontal') {
+                    const lineY = line.y * imageScale;
+                    if (Math.abs(y - lineY) < threshold) {
+                        e.preventDefault();
+                        selectedAuxLineIndex = i;
+                        isDraggingAuxLine = true;
+                        canvas.style.cursor = 'ns-resize';
+                        redrawAll();
+                        statusText.textContent = '横補助線を選択 - 上下にドラッグで移動';
+                        return;
+                    }
+                }
+            }
+
+            if (selectedAuxLineIndex !== null) {
+                selectedAuxLineIndex = null;
+                canvas.style.cursor = 'crosshair';
+                redrawAll();
+                statusText.textContent = '';
+            }
+            
+            if (selectedBoxIndex !== null) {
+                selectedBoxIndex = null;
+                canvas.style.cursor = 'crosshair';
+                redrawAll();
+                statusText.textContent = '';
+            }
+        }
+
+        function handleCanvasTouchStart(e) {
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            if (isVerticalAuxMode) {
+                e.preventDefault();
+                const unscaled = unscalePoint({ x, y });
+                auxiliaryLines.push({ type: 'vertical', x: unscaled.x });
+                redrawAll();
+                statusText.textContent = '縦補助線を描画しました';
+                isVerticalAuxMode = false;
+                verticalAuxBtn.classList.remove('active');
+                return;
+            }
+
+            if (isHorizontalAuxMode) {
+                e.preventDefault();
+                const unscaled = unscalePoint({ x, y });
+                auxiliaryLines.push({ type: 'horizontal', y: unscaled.y });
+                redrawAll();
+                statusText.textContent = '横補助線を描画しました';
+                isHorizontalAuxMode = false;
+                horizontalAuxBtn.classList.remove('active');
+                return;
+            }
+
+            if (isDrawBoxMode) {
+                e.preventDefault();
+                points.push({ x, y });
+
+                if (points.length === 1) {
+                    statusText.textContent = '枠描画: 2点目をタップ';
+                    drawPoint(x, y);
+                    redrawAll();
+                } else if (points.length === 2) {
+                    const unscaledP1 = unscalePoint(points[0]);
+                    const unscaledP2 = unscalePoint(points[1]);
+                    const color = colors[storedBoxes.length % colors.length];
+                    drawBox(points[0], points[1], color);
+                    storedBoxes.push({ p1: unscaledP1, p2: unscaledP2, color: color, index: storedBoxes.length + 1 });
+                    console.log('Box stored (touch):', { p1: unscaledP1, p2: unscaledP2, color, totalBoxes: storedBoxes.length });
+                    statusText.textContent = '枠を描画しました';
+                    isDrawBoxMode = false;
+                    drawBoxBtn.classList.remove('active');
+                    canvas.classList.add('active');
+                    console.log('Canvas active set to allow vertex selection (touch)');
+                    points = [];
+                    redrawAll();
+                }
+                return;
+            }
+        }
+
+        function handleCanvasMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (isDraggingVertex && selectedBoxIndex !== null && selectedVertexIndex !== null) {
+                e.preventDefault();
+                const box = storedBoxes[selectedBoxIndex];
+                const unscaledPoint = unscalePoint({ x, y });
+                
+                if (selectedVertexIndex === 0) {
+                    box.p1.x = unscaledPoint.x;
+                    box.p1.y = unscaledPoint.y;
+                } else if (selectedVertexIndex === 1) {
+                    box.p2.x = unscaledPoint.x;
+                    box.p1.y = unscaledPoint.y;
+                } else if (selectedVertexIndex === 2) {
+                    box.p1.x = unscaledPoint.x;
+                    box.p2.y = unscaledPoint.y;
+                } else if (selectedVertexIndex === 3) {
+                    box.p2.x = unscaledPoint.x;
+                    box.p2.y = unscaledPoint.y;
+                }
+                
+                redrawAll();
+                return;
+            }
+
+            if (isDraggingAuxLine && selectedAuxLineIndex !== null) {
+                e.preventDefault();
+                const line = auxiliaryLines[selectedAuxLineIndex];
+                if (line.type === 'vertical') {
+                    line.x = x / imageScale;
+                } else if (line.type === 'horizontal') {
+                    line.y = y / imageScale;
+                }
+                redrawAll();
+                return;
+            }
+
+            if (isDrawBoxMode || isVerticalAuxMode || isHorizontalAuxMode) {
+                canvas.style.cursor = 'crosshair';
+                return;
+            }
+
+            const threshold = 15;
+            let nearVertex = false;
+            let nearLine = false;
+
+            // Check for box vertices
+            for (let boxIndex = 0; boxIndex < storedBoxes.length; boxIndex++) {
+                const box = storedBoxes[boxIndex];
+                if (!box.p1 || !box.p2) continue;
+                
+                const p1 = scalePoint(box.p1);
+                const p2 = scalePoint(box.p2);
+                const x1 = Math.min(p1.x, p2.x);
+                const y1 = Math.min(p1.y, p2.y);
+                const x2 = Math.max(p1.x, p2.x);
+                const y2 = Math.max(p1.y, p2.y);
+                
+                const vertices = [{ x: x1, y: y1 }, { x: x2, y: y1 }, { x: x1, y: y2 }, { x: x2, y: y2 }];
+                
+                for (let vIndex = 0; vIndex < vertices.length; vIndex++) {
+                    const vertex = vertices[vIndex];
+                    const dx = x - vertex.x;
+                    const dy = y - vertex.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < threshold) {
+                        canvas.style.cursor = 'grab';
+                        nearVertex = true;
+                        break;
+                    }
+                }
+                
+                if (nearVertex) break;
+            }
+
+            if (!nearVertex) {
+                for (let i = 0; i < auxiliaryLines.length; i++) {
+                    const line = auxiliaryLines[i];
+                    if (line.type === 'vertical') {
+                        const lineX = line.x * imageScale;
+                        if (Math.abs(x - lineX) < threshold) {
+                            canvas.style.cursor = 'ew-resize';
+                            nearLine = true;
+                            break;
+                        }
+                    } else if (line.type === 'horizontal') {
+                        const lineY = line.y * imageScale;
+                        if (Math.abs(y - lineY) < threshold) {
+                            canvas.style.cursor = 'ns-resize';
+                            nearLine = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!nearVertex && !nearLine) {
+                canvas.style.cursor = 'default';
+            }
+        }
+
+        function handleCanvasTouchMove(e) {
+            if (isDraggingVertex && selectedBoxIndex !== null && selectedVertexIndex !== null) {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                const box = storedBoxes[selectedBoxIndex];
+                const unscaledPoint = unscalePoint({ x, y });
+                
+                if (selectedVertexIndex === 0) {
+                    box.p1.x = unscaledPoint.x;
+                    box.p1.y = unscaledPoint.y;
+                } else if (selectedVertexIndex === 1) {
+                    box.p2.x = unscaledPoint.x;
+                    box.p1.y = unscaledPoint.y;
+                } else if (selectedVertexIndex === 2) {
+                    box.p1.x = unscaledPoint.x;
+                    box.p2.y = unscaledPoint.y;
+                } else if (selectedVertexIndex === 3) {
+                    box.p2.x = unscaledPoint.x;
+                    box.p2.y = unscaledPoint.y;
+                }
+                
+                redrawAll();
+                return;
+            }
+            
+            if (isDraggingAuxLine && selectedAuxLineIndex !== null) {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                const line = auxiliaryLines[selectedAuxLineIndex];
+                if (line.type === 'vertical') {
+                    line.x = x / imageScale;
+                } else if (line.type === 'horizontal') {
+                    line.y = y / imageScale;
+                }
+                redrawAll();
+            }
+        }
+
+        function handleCanvasMouseUp(e) {
+            if (isDraggingVertex) {
+                isDraggingVertex = false;
+                canvas.style.cursor = 'default';
+                statusText.textContent = '頂点を移動しました';
+            } else if (isDraggingAuxLine) {
+                isDraggingAuxLine = false;
+                statusText.textContent = '補助線を移動しました';
+            }
+        }
+
+        function handleCanvasTouchEnd(e) {
+            if (isDraggingVertex) {
+                isDraggingVertex = false;
+                redrawAll();
+                statusText.textContent = '頂点を移動しました';
+            } else if (isDraggingAuxLine) {
+                isDraggingAuxLine = false;
+                if (auxiliaryLines.length === 0) {
+                    canvas.classList.remove('active');
+                }
+                redrawAll();
+                statusText.textContent = '補助線を移動しました';
+            }
+        }
+
+        function handleCanvasClick(e) {
+            if (!isDrawBoxMode && !isVerticalAuxMode && !isHorizontalAuxMode) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            console.log('handleCanvasClick:', { x, y, isDrawBoxMode, isVerticalAuxMode, isHorizontalAuxMode });
+
+            if (isVerticalAuxMode) {
+                const unscaled = unscalePoint({ x, y });
+                auxiliaryLines.push({ type: 'vertical', x: unscaled.x });
+                drawVerticalLine(x);
+                statusText.textContent = '縦補助線を描画しました';
+                isVerticalAuxMode = false;
+                verticalAuxBtn.classList.remove('active');
+                return;
+            }
+
+            if (isHorizontalAuxMode) {
+                const unscaled = unscalePoint({ x, y });
+                auxiliaryLines.push({ type: 'horizontal', y: unscaled.y });
+                drawHorizontalLine(y);
+                statusText.textContent = '横補助線を描画しました';
+                isHorizontalAuxMode = false;
+                horizontalAuxBtn.classList.remove('active');
+                return;
+            }
+
+            if (isDrawBoxMode) {
+                points.push({ x, y });
+
+                if (points.length === 1) {
+                    statusText.textContent = '枠描画: 2点目をクリック';
+                    drawPoint(x, y);
+                    redrawAll();
+                } else if (points.length === 2) {
+                    const unscaledP1 = unscalePoint(points[0]);
+                    const unscaledP2 = unscalePoint(points[1]);
+                    const color = colors[storedBoxes.length % colors.length];
+                    drawBox(points[0], points[1], color);
+                    storedBoxes.push({ p1: unscaledP1, p2: unscaledP2, color: color, index: storedBoxes.length + 1 });
+                    console.log('Box stored (click):', { p1: unscaledP1, p2: unscaledP2, color, totalBoxes: storedBoxes.length });
+                    statusText.textContent = '枠を描画しました';
+                    isDrawBoxMode = false;
+                    drawBoxBtn.classList.remove('active');
+                    canvas.classList.add('active');
+                    console.log('Canvas active set to allow vertex selection (click)');
+                    points = [];
+                    redrawAll();
+                }
+            }
+        }
+
+        function drawPoint(x, y, color = '#e74c3c', radius = 5) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawBox(p1, p2, color = '#e74c3c', isSelected = false) {
+            const x1 = Math.min(p1.x, p2.x);
+            const y1 = Math.min(p1.y, p2.y);
+            const x2 = Math.max(p1.x, p2.x);
+            const y2 = Math.max(p1.y, p2.y);
+            const width = x2 - x1;
+            const height = y2 - y1;
+
+            const vertexColor = isSelected ? '#2ecc71' : color;
+            const vertexRadius = isSelected ? 7 : 5;
+            const lineWidth = isSelected ? 3 : 2;
+
+            drawPoint(x1, y1, vertexColor, vertexRadius);
+            drawPoint(x2, y1, vertexColor, vertexRadius);
+            drawPoint(x1, y2, vertexColor, vertexRadius);
+            drawPoint(x2, y2, vertexColor, vertexRadius);
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.setLineDash([]);
+            
+            ctx.beginPath();
+            ctx.rect(x1, y1, width, height);
+            ctx.stroke();
+        }
+
+        function drawVerticalLine(x, isSelected = false) {
+            ctx.strokeStyle = isSelected ? '#3498db' : '#000000';
+            ctx.lineWidth = isSelected ? 3 : 1;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        function drawHorizontalLine(y, isSelected = false) {
+            ctx.strokeStyle = isSelected ? '#3498db' : '#000000';
+            ctx.lineWidth = isSelected ? 3 : 1;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+
+        saveBtn.addEventListener('click', () => {
+            saveImages();
+        });
+
+        function saveImages() {
+            if (!img || !canvas) {
+                alert('画像が読み込まれていません');
+                return;
+            }
+
+            const canvas1 = document.createElement('canvas');
+            canvas1.width = originalImageWidth;
+            canvas1.height = originalImageHeight;
+            const ctx1 = canvas1.getContext('2d');
+            ctx1.drawImage(img, 0, 0, originalImageWidth, originalImageHeight);
+            drawAllLinesOnCanvas(ctx1, canvas1.width, canvas1.height, 1.0);
+            downloadCanvas(canvas1, 'image_with_boxes.png');
+
+            const canvas2 = document.createElement('canvas');
+            canvas2.width = originalImageWidth;
+            canvas2.height = originalImageHeight;
+            const ctx2 = canvas2.getContext('2d');
+            ctx2.fillStyle = '#FFFFFF';
+            ctx2.fillRect(0, 0, canvas2.width, canvas2.height);
+            drawAllLinesOnCanvas(ctx2, canvas2.width, canvas2.height, 1.0);
+            
+            setTimeout(() => {
+                downloadCanvas(canvas2, 'boxes_only.png');
+            }, 100);
+
+            statusText.textContent = '画像を保存しました';
+        }
+
+        function drawAllLinesOnCanvas(ctx, width, height, scale) {
+            storedBoxes.forEach(box => {
+                if (box.p1 && box.p2) {
+                    const p1 = { x: box.p1.x * scale, y: box.p1.y * scale };
+                    const p2 = { x: box.p2.x * scale, y: box.p2.y * scale };
+                    drawBoxOnCanvas(ctx, p1, p2, box.color);
+                }
+            });
+            
+            auxiliaryLines.forEach(line => {
+                if (line.type === 'vertical') {
+                    drawVerticalLineOnCanvas(ctx, line.x * scale, height);
+                } else if (line.type === 'horizontal') {
+                    drawHorizontalLineOnCanvas(ctx, line.y * scale, width);
+                }
+            });
+        }
+
+        function drawBoxOnCanvas(ctx, p1, p2, color) {
+            const x1 = Math.min(p1.x, p2.x);
+            const y1 = Math.min(p1.y, p2.y);
+            const x2 = Math.max(p1.x, p2.x);
+            const y2 = Math.max(p1.y, p2.y);
+            const width = x2 - x1;
+            const height = y2 - y1;
+
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x1, y1, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x2, y1, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x1, y2, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x2, y2, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.rect(x1, y1, width, height);
+            ctx.stroke();
+        }
+
+        function drawVerticalLineOnCanvas(ctx, x, height) {
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+
+        function drawHorizontalLineOnCanvas(ctx, y, width) {
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+
+        function downloadCanvas(canvas, filename) {
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+
+        showAuxLinesCheckbox.addEventListener('change', redrawAll);
+        showBoxesCheckbox.addEventListener('change', redrawAll);
+    </script>
+</body>
+</html>
