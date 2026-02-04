@@ -213,6 +213,66 @@
             display: block;
         }
 
+        .hamburger-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .hamburger-btn:hover {
+            background-color: #34495e;
+        }
+
+        .hamburger-btn span {
+            width: 25px;
+            height: 3px;
+            background-color: white;
+            margin: 3px 0;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .hamburger-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+
+        .hamburger-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .menu-overlay.active {
+            display: block;
+        }
+
         .status-text {
             margin-top: 10px;
             font-size: 12px;
@@ -482,16 +542,20 @@
                 flex-direction: row;
             }
 
+            .hamburger-btn {
+                display: flex;
+            }
+
             .left-panel {
                 position: fixed;
                 top: 0;
                 left: -100%;
-                width: 80px;
-                max-width: 80px;
-                min-width: 80px;
+                width: 300px;
+                max-width: 300px;
+                min-width: 300px;
                 height: 100vh;
                 max-height: 100vh;
-                padding: 10px;
+                padding: 20px;
                 z-index: 1000;
                 transition: left 0.3s ease;
                 overflow-y: auto;
@@ -512,42 +576,42 @@
             .left-panel .zoom-value,
             .left-panel .rotation-value,
             .left-panel .boxes {
-                display: none;
+                display: block;
             }
 
             .left-panel .drop-zone-text {
-                display: none;
+                display: block;
             }
 
             .left-panel .btn {
-                font-size: 0;
-                padding: 12px 5px;
+                font-size: 14px;
+                padding: 12px;
                 width: 100%;
             }
 
             .left-panel .aux-lines-group {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .left-panel .aux-lines-group .btn {
-                width: 100%;
-            }
-
-            .left-panel .toggle-item {
-                flex-direction: column;
-                align-items: center;
+                flex-direction: row;
                 gap: 5px;
             }
 
+            .left-panel .aux-lines-group .btn {
+                width: calc(50% - 2.5px);
+            }
+
+            .left-panel .toggle-item {
+                flex-direction: row;
+                align-items: center;
+                gap: 10px;
+            }
+
             .left-panel .toggle-item label {
-                display: none;
+                display: block;
             }
 
             .left-panel .toggle-item input[type="checkbox"] {
-                margin-right: 0;
-                width: 24px;
-                height: 24px;
+                margin-right: 10px;
+                width: 18px;
+                height: 18px;
             }
 
             .right-panel {
@@ -614,10 +678,10 @@
 
         @media (max-width: 480px) {
             .left-panel {
-                padding: 8px;
-                width: 70px;
-                max-width: 70px;
-                min-width: 70px;
+                padding: 15px;
+                width: 280px;
+                max-width: 280px;
+                min-width: 280px;
             }
 
             .right-panel {
@@ -671,8 +735,15 @@
     </style>
 </head>
 <body>
+    <button class="hamburger-btn" id="hamburgerBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <div class="menu-overlay" id="menuOverlay"></div>
+    
     <div class="container">
-        <div class="left-panel">
+        <div class="left-panel" id="leftPanel">
             <a href="index.html" class="home-btn">🏠 ホーム</a>
             
             <h1>頭身測定ツール</h1>
@@ -782,6 +853,22 @@
         const statusText = document.getElementById('statusText');
         const boxes = document.getElementById('boxes');
         const saveBtn = document.getElementById('saveBtn');
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const leftPanel = document.getElementById('leftPanel');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        // Hamburger menu toggle
+        hamburgerBtn.addEventListener('click', () => {
+            leftPanel.classList.toggle('active');
+            hamburgerBtn.classList.toggle('active');
+            menuOverlay.classList.toggle('active');
+        });
+
+        menuOverlay.addEventListener('click', () => {
+            leftPanel.classList.remove('active');
+            hamburgerBtn.classList.remove('active');
+            menuOverlay.classList.remove('active');
+        });
 
         let canvas = null;
         let ctx = null;
@@ -1328,6 +1415,47 @@
             const touch = e.touches[0];
             const x = touch.clientX - rect.left;
             const y = touch.clientY - rect.top;
+
+            // Check for box vertices first (for editing mode)
+            if (!isDrawBoxMode && !isVerticalAuxMode && !isHorizontalAuxMode) {
+                const threshold = 25; // Larger threshold for touch
+
+                for (let boxIndex = 0; boxIndex < storedBoxes.length; boxIndex++) {
+                    const box = storedBoxes[boxIndex];
+                    if (!box.p1 || !box.p2) continue;
+                    
+                    const p1 = scalePoint(box.p1);
+                    const p2 = scalePoint(box.p2);
+                    const x1 = Math.min(p1.x, p2.x);
+                    const y1 = Math.min(p1.y, p2.y);
+                    const x2 = Math.max(p1.x, p2.x);
+                    const y2 = Math.max(p1.y, p2.y);
+                    
+                    const vertices = [
+                        { x: x1, y: y1, index: 0 },
+                        { x: x2, y: y1, index: 1 },
+                        { x: x1, y: y2, index: 2 },
+                        { x: x2, y: y2, index: 3 }
+                    ];
+                    
+                    for (let vIndex = 0; vIndex < vertices.length; vIndex++) {
+                        const vertex = vertices[vIndex];
+                        const dx = x - vertex.x;
+                        const dy = y - vertex.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < threshold) {
+                            e.preventDefault();
+                            selectedBoxIndex = boxIndex;
+                            selectedVertexIndex = vIndex;
+                            isDraggingVertex = true;
+                            redrawAll();
+                            statusText.textContent = '頂点を選択 - ドラッグで移動';
+                            return;
+                        }
+                    }
+                }
+            }
 
             if (isVerticalAuxMode) {
                 e.preventDefault();
